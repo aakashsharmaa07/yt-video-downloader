@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidFetch - High Speed YouTube Video & Audio Downloader</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF0000'%3E%3Cpath d='M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z'/%3E%3C/svg%3E">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow effect -->
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow secondary"></div>
+
+  <!-- Main Container -->
+  <div class="app-wrapper">
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Vid<span class="highlight">Fetch</span></span>
+          <span class="brand-badge">STUDIO PRO</span>
+        </div>
+      </div>
+
+      <div class="nav-status">
+        <span class="status-indicator">
+          <span class="status-dot"></span>
+          <span class="status-text">Engine Online</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Hero Content -->
+    <main class="main-content">
+      <section class="hero-section">
+        <div class="hero-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          Direct High-Bitrate Downloader
+        </div>
+        <h1 class="hero-title">
+          Download YouTube Videos & Audio <br>
+          <span class="text-gradient">in Crisp Full HD Quality</span>
+        </h1>
+        <p class="hero-desc">
+          Paste any YouTube video or Shorts link to instantly extract 1080p, 720p MP4 or high-fidelity 320kbps MP3 audio with no ads and blazing speed.
+        </p>
+      </section>
+
+      <!-- Search & Input Section -->
+      <section class="input-section">
+        <div class="input-container" id="inputContainer">
+          <div class="input-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            id="urlInput" 
+            class="url-input" 
+            placeholder="Paste YouTube link here (e.g. https://youtu.be/...)" 
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div class="input-actions">
+            <button type="button" id="clearBtn" class="action-btn clear-btn" title="Clear URL" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button type="button" id="pasteBtn" class="action-btn paste-btn" title="Paste from clipboard">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              <span>Paste</span>
+            </button>
+            <button type="button" id="fetchBtn" class="fetch-btn">
+              <span class="btn-text">Fetch Video</span>
+              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+              <div class="spinner" style="display: none;"></div>
+            </button>
+          </div>
+        </div>
+        
+        <div class="quick-hints">
+          <span class="hint-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> YouTube Videos</span>
+          <span class="hint-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> YouTube Shorts</span>
+          <span class="hint-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Music & Podcasts</span>
+          <span class="hint-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> MP3 Audio Extraction</span>
+        </div>
+      </section>
+
+      <!-- Loading State Card -->
+      <section id="loadingCard" class="loading-state-card" style="display: none;">
+        <div class="loader-pulse">
+          <div class="pulse-ring"></div>
+          <svg class="loader-yt-icon" viewBox="0 0 24 24" fill="#FF0000" width="32" height="32">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </div>
+        <div class="loader-texts">
+          <h3>Analyzing Video Stream...</h3>
+          <p>Extracting high-definition resolutions, audio tracks, and stream metadata</p>
+        </div>
+      </section>
+
+      <!-- Video Result Card -->
+      <section id="resultCard" class="result-card" style="display: none;">
+        <div class="card-grid">
+          <!-- Left: Thumbnail & Duration -->
+          <div class="card-media">
+            <div class="thumbnail-wrapper">
+              <img id="videoThumb" src="" alt="Video Thumbnail" class="video-thumbnail">
+              <div class="duration-badge" id="videoDuration">00:00</div>
+              <a id="watchLink" href="#" target="_blank" class="watch-overlay" title="Watch on YouTube">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <span>Preview</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Right: Details & Format Selector -->
+          <div class="card-info">
+            <h2 id="videoTitle" class="video-title">Video Title</h2>
+
+            <div class="creator-meta">
+              <div class="channel-pill">
+                <div class="channel-avatar" id="channelAvatar">Y</div>
+                <span id="channelName" class="channel-name">Channel Name</span>
+                <svg class="verified-icon" width="14" height="14" viewBox="0 0 24 24" fill="#AAAAAA">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
+              <span class="meta-dot">•</span>
+              <span id="videoViews" class="video-views">0 views</span>
+            </div>
+
+            <!-- Format Tabs -->
+            <div class="format-tabs">
+              <button type="button" class="tab-btn active" id="tabVideo" data-type="video">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                <span>Video (MP4)</span>
+              </button>
+              <button type="button" class="tab-btn" id="tabAudio" data-type="audio">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <span>Audio (MP3)</span>
+              </button>
+            </div>
+
+            <!-- Formats List -->
+            <div class="formats-container" id="formatsContainer">
+              <!-- Dynamically populated options -->
+            </div>
+
+            <!-- Action Area -->
+            <div class="download-action-area">
+              <button type="button" id="startDownloadBtn" class="main-download-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span id="downloadBtnLabel">Download Selected Quality</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Download Progress Modal/Card -->
+      <section id="progressSection" class="progress-section" style="display: none;">
+        <div class="progress-card">
+          <div class="progress-header">
+            <div class="progress-title-wrap">
+              <div class="progress-spinner"></div>
+              <div>
+                <h4 id="progressStatus">Downloading stream...</h4>
+                <p id="progressFile" class="progress-sub">video.mp4</p>
+              </div>
+            </div>
+            <span id="progressPercent" class="progress-percent-badge">0%</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress-bar-container">
+            <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+
+          <!-- Progress Stats -->
+          <div class="progress-stats">
+            <div class="stat-pill">
+              <span class="stat-label">Speed:</span>
+              <span id="statSpeed" class="stat-value">-- MB/s</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Size:</span>
+              <span id="statSize" class="stat-value">-- MB</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">ETA:</span>
+              <span id="statEta" class="stat-value">--:--</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Highlights -->
+      <section class="features-section">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3>Lightning Speeds</h3>
+          <p>Direct chunk streaming engine with multi-threaded download acceleration.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="15" x="2" y="4" rx="2"/><polyline points="8 20 12 20 16 20"/></svg>
+          </div>
+          <h3>Up to 4K & 1080p</h3>
+          <p>Crystal clear resolution with pristine video codecs and synced stereo sound.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <h3>High Bitrate MP3</h3>
+          <p>Extract pure studio sound tracks up to 320 kbps with automatic tagging.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h10v10H7z"/></svg>
+          </div>
+          <h3>Shorts & Reels</h3>
+          <p>Seamlessly handles vertical Shorts, standard landscape videos, and podcasts.</p>
+        </div>
+      </section>
+
+      <!-- Recent Downloads History Section -->
+      <section id="historySection" class="history-section" style="display: none;">
+        <div class="history-header">
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Recent Downloads
+          </h3>
+          <button type="button" id="clearHistoryBtn" class="clear-history-btn">Clear</button>
+        </div>
+        <div id="historyList" class="history-grid">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>© 2026 VidFetch Studio • Crafted for high performance YouTube downloading</p>
+      <p class="footer-sub">For personal and educational use only.</p>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Confetti Canvas (for celebration on download ready) -->
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+  <script src="app.js"></script>
+</body>
+</html>
