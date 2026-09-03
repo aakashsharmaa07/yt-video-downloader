@@ -244,13 +244,22 @@ body {
   margin: 0 auto 40px;
 }
 
+.search-box-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
 .input-container {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
-  padding: 7px 8px 7px 22px;
+  padding: 7px 12px 7px 22px;
   box-shadow: 0 10px 32px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03);
   transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
@@ -1149,33 +1158,361 @@ body {
 }
 
 /* ==========================================================================
-   Responsive Adaptations
+   Mobile Performance & Responsive Adaptations
    ========================================================================== */
+
+/* Universal mobile touch optimizations */
+button, a, input, select, .format-option-card, .history-item {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 @media (max-width: 768px) {
+  .app-wrapper {
+    padding: 0 16px;
+  }
+
+  .ambient-glow {
+    width: 320px;
+    height: 180px;
+    filter: blur(45px);
+    opacity: 0.5;
+  }
+
+  .ambient-glow.secondary {
+    display: none; /* Huge GPU performance boost on mobile */
+  }
+
+  .navbar {
+    padding: 16px 0;
+  }
+
+  .brand-title {
+    font-size: 1.2rem;
+  }
+
+  .status-indicator {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .main-content {
+    padding: 24px 0 40px;
+  }
+
+  .hero-section {
+    margin-bottom: 22px;
+  }
+
+  .hero-badge {
+    font-size: 0.72rem;
+    padding: 4px 12px;
+    margin-bottom: 12px;
+  }
+
   .hero-title {
-    font-size: 2.1rem;
+    font-size: 1.85rem;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+  }
+
+  .hero-desc {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    padding: 0 6px;
+  }
+
+  /* Input Section - Stack into clean two-row mobile flow */
+  .input-section {
+    margin-bottom: 30px;
+  }
+
+  .search-box-wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .input-container {
+    width: 100%;
+    padding: 6px 10px 6px 16px;
+  }
+
+  .input-icon {
+    margin-right: 8px;
+  }
+
+  .input-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .url-input {
+    font-size: 0.88rem;
+    padding: 8px 0;
+  }
+
+  .action-btn {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+  }
+
+  .clear-btn {
+    padding: 7px;
+  }
+
+  .fetch-btn {
+    width: 100%;
+    height: 48px;
+    padding: 0 20px;
+    font-size: 0.95rem;
+    justify-content: center;
+    border-radius: var(--radius-full);
+  }
+
+  .quick-hints {
+    gap: 6px 12px;
+    margin-top: 12px;
+  }
+
+  .hint-item {
+    font-size: 0.72rem;
+  }
+
+  /* Video Result Card */
+  .result-card {
+    border-radius: 16px;
+    margin-bottom: 24px;
   }
 
   .card-grid {
     grid-template-columns: 1fr;
-    padding: 20px;
-    gap: 20px;
+    padding: 16px;
+    gap: 16px;
   }
 
-  .input-container {
-    padding: 6px 6px 6px 16px;
+  .thumbnail-wrapper {
+    border-radius: 12px;
   }
 
-  .url-input {
-    font-size: 0.92rem;
+  .duration-badge {
+    bottom: 6px;
+    right: 6px;
+    font-size: 0.72rem;
+    padding: 2px 6px;
   }
 
-  .fetch-btn {
-    padding: 10px 18px;
-    font-size: 0.88rem;
+  .video-title {
+    font-size: 1.05rem;
+    line-height: 1.32;
+    margin-bottom: 10px;
+  }
+
+  .creator-meta {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .channel-pill {
+    padding: 3px 10px 3px 3px;
+  }
+
+  .channel-avatar {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+
+  .channel-name {
+    font-size: 0.78rem;
+  }
+
+  .video-views {
+    font-size: 0.78rem;
+  }
+
+  .format-tabs {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 0.82rem;
   }
 
   .formats-container {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .format-option-card {
+    padding: 9px;
+  }
+
+  .format-badge {
+    font-size: 0.6rem;
+    padding: 2px 5px;
+  }
+
+  .format-quality {
+    font-size: 0.95rem;
+  }
+
+  .format-sub {
+    font-size: 0.7rem;
+  }
+
+  .format-size {
+    font-size: 0.7rem;
+  }
+
+  .main-download-btn {
+    padding: 13px 18px;
+    font-size: 0.95rem;
+    min-height: 48px;
+  }
+
+  /* Progress Section */
+  .progress-section {
+    margin-bottom: 24px;
+  }
+
+  .progress-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .progress-header {
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .progress-title-wrap {
+    gap: 10px;
+  }
+
+  .progress-title-wrap h4 {
+    font-size: 0.92rem;
+  }
+
+  .progress-sub {
+    font-size: 0.72rem;
+  }
+
+  .progress-header-right {
+    gap: 8px;
+  }
+
+  .progress-percent-badge {
+    font-size: 1.05rem;
+  }
+
+  .cancel-download-btn {
+    padding: 4px 10px;
+    font-size: 0.74rem;
+  }
+
+  .progress-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .stat-pill {
+    padding: 5px 6px;
+    font-size: 0.72rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 1px;
+    justify-content: center;
+  }
+
+  .stat-label {
+    font-size: 0.64rem;
+  }
+
+  /* Features Grid */
+  .features-section {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 24px auto;
+  }
+
+  .feature-card {
+    padding: 14px 12px;
+  }
+
+  .feature-icon {
+    width: 34px;
+    height: 34px;
+    margin-bottom: 8px;
+  }
+
+  .feature-card h3 {
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+  }
+
+  .feature-card p {
+    font-size: 0.75rem;
+    line-height: 1.35;
+  }
+
+  /* History Section */
+  .history-section {
+    padding: 16px 14px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+  }
+
+  .history-header {
+    margin-bottom: 12px;
+  }
+
+  .history-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .clear-history-btn {
+    padding: 4px 10px;
+    font-size: 0.74rem;
+  }
+
+  .history-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .history-item {
+    padding: 8px;
+  }
+
+  .history-thumb {
+    width: 60px;
+    height: 38px;
+  }
+
+  .history-title {
+    font-size: 0.78rem;
+  }
+
+  .history-meta {
+    font-size: 0.68rem;
+  }
+
+  /* Toast floating pill on mobile */
+  .toast-container {
+    top: 14px;
+    max-width: calc(100vw - 28px);
+  }
+
+  .toast {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+    max-width: 100%;
   }
 }

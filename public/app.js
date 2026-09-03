@@ -5,7 +5,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const urlInput = document.getElementById('urlInput');
-  const pasteBtn = document.getElementById('pasteBtn');
   const clearBtn = document.getElementById('clearBtn');
   const fetchBtn = document.getElementById('fetchBtn');
   const btnText = fetchBtn.querySelector('.btn-text');
@@ -82,27 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       fetchVideoInfo();
-    }
-  });
-
-  // Paste from clipboard button
-  pasteBtn.addEventListener('click', async () => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.readText) {
-        const text = await navigator.clipboard.readText();
-        if (text) {
-          urlInput.value = text.trim();
-          clearBtn.style.display = 'inline-flex';
-          showToast('URL pasted from clipboard!', 'info');
-          fetchVideoInfo();
-        } else {
-          showToast('Clipboard is empty.', 'error');
-        }
-      } else {
-        showToast('Clipboard access not supported by browser. Please paste manually.', 'error');
-      }
-    } catch (err) {
-      showToast('Could not access clipboard. Please paste manually.', 'error');
     }
   });
 
