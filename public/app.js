@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statSpeed = document.getElementById('statSpeed');
   const statSize = document.getElementById('statSize');
   const statEta = document.getElementById('statEta');
+  const cancelDownloadBtn = document.getElementById('cancelDownloadBtn');
 
   const historySection = document.getElementById('historySection');
   const historyList = document.getElementById('historyList');
@@ -47,6 +48,20 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeTab = 'video'; // 'video' | 'audio'
   let selectedFormat = null;
   let currentPollInterval = null;
+  let currentJobId = null;
+
+  // Helper: Normalize binary units (MiB -> MB, KiB -> KB, GiB -> GB)
+  function cleanUnits(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .replace(/GiB\/s/gi, 'GB/s')
+      .replace(/MiB\/s/gi, 'MB/s')
+      .replace(/KiB\/s/gi, 'KB/s')
+      .replace(/GiB/gi, 'GB')
+      .replace(/MiB/gi, 'MB')
+      .replace(/KiB/gi, 'KB')
+      .trim();
+  }
 
   // Render initial history
   renderHistory();
@@ -211,8 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="format-top-row">
           <span class="format-badge">${item.badge || item.ext.toUpperCase()}</span>
           <div class="format-check">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
+            <svg viewBox="0 0 12 12" width="10" height="10" fill="none">
+              <polyline points="2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </div>
@@ -278,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const jobId = prepData.jobId;
+      currentJobId = jobId;
       pollJobProgress(jobId);
     } catch (err) {
       console.error('Download prepare error:', err);
@@ -286,6 +302,26 @@ document.addEventListener('DOMContentLoaded', () => {
       startDownloadBtn.disabled = false;
       startDownloadBtn.style.opacity = '1';
     }
+  });
+
+  // Cancel Download Button Handler
+  cancelDownloadBtn.addEventListener('click', async () => {
+    if (!currentJobId) return;
+    const jobIdToCancel = currentJobId;
+    currentJobId = null;
+
+    if (currentPollInterval) clearInterval(currentPollInterval);
+
+    try {
+      await fetch(`/api/download/cancel/${jobIdToCancel}`, { method: 'POST' });
+    } catch (e) {
+      console.warn('Cancel error:', e);
+    }
+
+    progressSection.style.display = 'none';
+    startDownloadBtn.disabled = false;
+    startDownloadBtn.style.opacity = '1';
+    showToast('Download cancelled.', 'info');
   });
 
   // Poll Job Progress
@@ -302,23 +338,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
 
         if (data.status === 'downloading') {
-          progressStatus.textContent = 'Downloading stream from YouTube...';
-          const p = Math.min(Math.max(data.progress || 0, 5), 95);
+          progressStatus.textContent = data.statusText || 'Downloading stream from YouTube...';
+          const p = Math.min(Math.max(data.progress || 0, 5), 96);
           progressBarFill.style.width = `${p}%`;
           progressPercent.textContent = `${Math.floor(p)}%`;
-          if (data.speed) statSpeed.textContent = data.speed;
-          if (data.totalSize) statSize.textContent = data.totalSize;
+          if (data.speed) statSpeed.textContent = cleanUnits(data.speed);
+          if (data.totalSize) statSize.textContent = cleanUnits(data.totalSize);
           if (data.eta) statEta.textContent = data.eta;
         } else if (data.status === 'merging') {
-          progressStatus.textContent = 'Muxing high-def video & audio tracks...';
-          progressBarFill.style.width = '96%';
-          progressPercent.textContent = '96%';
+          progressStatus.textContent = data.statusText || 'Muxing high-def video & audio tracks...';
+          progressBarFill.style.width = '97%';
+          progressPercent.textContent = '97%';
           statSpeed.textContent = 'FFmpeg Processing';
           statEta.textContent = 'Almost done';
         } else if (data.status === 'converting') {
-          progressStatus.textContent = 'Extracting and encoding high-bitrate MP3...';
-          progressBarFill.style.width = '96%';
-          progressPercent.textContent = '96%';
+          progressStatus.textContent = data.statusText || 'Extracting and encoding high-bitrate MP3...';
+          progressBarFill.style.width = '97%';
+          progressPercent.textContent = '97%';
           statSpeed.textContent = 'Encoding MP3';
         } else if (data.status === 'ready') {
           clearInterval(currentPollInterval);
@@ -369,21 +405,21 @@ document.addEventListener('DOMContentLoaded', () => {
         startDownloadBtn.disabled = false;
         startDownloadBtn.style.opacity = '1';
       }
-    }, 600);
+    }, 350);
   }
 
-  // Toast System
+  // Toast System (Floating Centered Pill)
   function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
 
     let iconSvg = '';
     if (type === 'success') {
-      iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+      iconSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     } else if (type === 'error') {
-      iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+      iconSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
     } else {
-      iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+      iconSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
     }
 
     toast.innerHTML = `${iconSvg} <span>${message}</span>`;
@@ -391,10 +427,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateX(100%)';
-      toast.style.transition = 'all 0.3s ease';
+      toast.style.transform = 'translateY(-20px) scale(0.95)';
+      toast.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    }, 3200);
   }
 
   // Recent Downloads Storage

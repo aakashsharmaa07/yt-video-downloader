@@ -59,6 +59,19 @@ function formatBytes(bytes) {
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
 }
 
+// Helper: Normalize binary units (MiB -> MB, KiB -> KB, GiB -> GB)
+function normalizeUnits(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/GiB\/s/gi, 'GB/s')
+    .replace(/MiB\/s/gi, 'MB/s')
+    .replace(/KiB\/s/gi, 'KB/s')
+    .replace(/GiB/gi, 'GB')
+    .replace(/MiB/gi, 'MB')
+    .replace(/KiB/gi, 'KB')
+    .trim();
+}
+
 // Validate YouTube URL
 function isValidYouTubeUrl(url) {
   if (!url || typeof url !== 'string') return false;
@@ -248,6 +261,7 @@ app.post('/api/download/prepare', (req, res) => {
     title: cleanTitle,
     ext,
     status: 'starting',
+    statusText: 'Connecting to YouTube high-speed stream...',
     progress: 0,
     speed: '',
     eta: '',
@@ -260,13 +274,19 @@ app.post('/api/download/prepare', (req, res) => {
 
   jobs.set(jobId, job);
 
-  // Build yt-dlp arguments
+  // Build yt-dlp arguments with multi-threaded acceleration
   const args = [
     '--no-playlist',
     '--no-warnings',
     '--newline',
     '--ffmpeg-location', FFMPEG_PATH,
     '--js-runtimes', 'node',
+    '-N', '8',
+    '--concurrent-fragments', '8',
+    '--buffer-size', '64K',
+    '--http-chunk-size', '10M',
+    '--no-mtime',
+    '--extractor-args', 'youtube:player_client=android,web',
     '-o', outputTemplate
   ];
 
@@ -296,26 +316,51 @@ app.post('/api/download/prepare', (req, res) => {
   args.push(url.trim());
 
   const proc = spawn(YT_DLP_PATH, args);
+  job.proc = proc;
+  let streamCount = 0;
+  const isMergedVideo = type !== 'audio';
 
   proc.stdout.on('data', (data) => {
     const lines = data.toString().split('\n');
     for (const line of lines) {
+      if (line.includes('Destination:')) {
+        streamCount++;
+      }
+
       const dlMatch = line.match(/\[download\]\s+([\d\.]+)%\s+of\s+~?\s*([\d\.]+\s*\w+)\s+at\s+([\d\.]+\s*\w+\/s)\s+ETA\s+([\d:]+)/i);
       if (dlMatch) {
+        const rawPercent = parseFloat(dlMatch[1]) || 0;
+        if (isMergedVideo) {
+          if (streamCount <= 1) {
+            // Video stream: smoothly covers 0% to 85%
+            job.progress = Math.min(Math.round(rawPercent * 0.85), 85);
+            job.statusText = 'Downloading HD video stream...';
+          } else {
+            // Audio stream: smoothly covers 85% to 96%
+            job.progress = Math.min(85 + Math.round(rawPercent * 0.11), 96);
+            job.statusText = 'Downloading audio track...';
+          }
+        } else {
+          // Audio only: smoothly covers 0% to 94%
+          job.progress = Math.min(Math.round(rawPercent * 0.94), 94);
+          job.statusText = 'Downloading audio stream...';
+        }
+
         job.status = 'downloading';
-        job.progress = parseFloat(dlMatch[1]) || job.progress;
-        job.totalSize = dlMatch[2] || job.totalSize;
-        job.speed = dlMatch[3] || job.speed;
+        job.totalSize = normalizeUnits(dlMatch[2]) || job.totalSize;
+        job.speed = normalizeUnits(dlMatch[3]) || job.speed;
         job.eta = dlMatch[4] || job.eta;
         continue;
       }
 
       if (line.includes('[Merger]') || line.includes('Merging formats')) {
         job.status = 'merging';
-        job.progress = 98;
+        job.statusText = 'Muxing high-def video & audio tracks with FFmpeg...';
+        job.progress = 97;
       } else if (line.includes('[ExtractAudio]')) {
         job.status = 'converting';
-        job.progress = 95;
+        job.statusText = 'Extracting and encoding high-bitrate MP3...';
+        job.progress = 97;
       }
     }
   });
@@ -368,6 +413,7 @@ app.get('/api/download/progress/:jobId', (req, res) => {
   res.json({
     id: job.id,
     status: job.status,
+    statusText: job.statusText || '',
     progress: job.progress,
     speed: job.speed,
     eta: job.eta,
@@ -375,6 +421,52 @@ app.get('/api/download/progress/:jobId', (req, res) => {
     fileName: job.fileName,
     error: job.error
   });
+});
+
+// API: Cancel Download Job
+app.post('/api/download/cancel/:jobId', (req, res) => {
+  const { jobId } = req.params;
+  const job = jobs.get(jobId);
+
+  if (job) {
+    if (job.proc) {
+      try {
+        job.proc.kill('SIGKILL');
+      } catch (e) {
+        console.error('Error killing job proc:', e);
+      }
+    }
+    job.status = 'cancelled';
+    job.error = 'Download cancelled by user.';
+
+    // Clean up temporary files (with retry to allow Windows to release file handles)
+    const cleanup = () => {
+      try {
+        const files = fs.readdirSync(TEMP_DIR);
+        for (const file of files) {
+          if (file.startsWith(jobId)) {
+            try {
+              fs.unlinkSync(path.join(TEMP_DIR, file));
+            } catch (err) {
+              setTimeout(() => {
+                try { fs.unlinkSync(path.join(TEMP_DIR, file)); } catch (e) {}
+              }, 1000);
+            }
+          }
+        }
+      } catch (cleanErr) {
+        console.error('Cancel file cleanup error:', cleanErr);
+      }
+    };
+
+    cleanup();
+    setTimeout(cleanup, 600);
+
+    jobs.delete(jobId);
+    return res.json({ success: true, message: 'Download cancelled.' });
+  }
+
+  res.status(404).json({ error: 'Job not found.' });
 });
 
 // API: Serve Downloaded File
