@@ -529,7 +529,7 @@ setInterval(() => {
       const fullPath = path.join(TEMP_DIR, file);
       const stat = fs.statSync(fullPath);
       if (now - stat.mtimeMs > 15 * 60 * 1000) {
-        fs.unlinkSync(fullPath);
+        try { fs.unlinkSync(fullPath); } catch (e) {}
       }
     }
 
