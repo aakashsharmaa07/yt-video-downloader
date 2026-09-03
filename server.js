@@ -145,48 +145,35 @@ app.post('/api/info', async (req, res) => {
 
       // Standard resolution tiers we offer
       const standardTiers = [
-        { height: 2160, label: '4K Ultra HD', quality: '2160p', badge: '4K' },
-        { height: 1440, label: '2K Quad HD', quality: '1440p', badge: '2K' },
-        { height: 1080, label: '1080p Full HD', quality: '1080p', badge: 'FHD' },
-        { height: 720, label: '720p HD', quality: '720p', badge: 'HD' },
-        { height: 480, label: '480p Standard', quality: '480p', badge: 'SD' },
-        { height: 360, label: '360p Low', quality: '360p', badge: 'ECO' }
+        { height: 1080, label: '1080p Full HD', quality: '1080p', badge: 'FHD', subLabel: '1080p MP4 Video' },
+        { height: 720, label: '720p HD', quality: '720p', badge: 'HD', subLabel: '720p MP4 Video' },
+        { height: 480, label: '480p Standard', quality: '480p', badge: 'SD', subLabel: '480p MP4 Video' },
+        { height: 360, label: '360p Low', quality: '360p', badge: 'ECO', subLabel: '360p MP4 Video' }
       ];
 
       const availableVideo = [];
+      const effectiveDuration = data.duration || 180;
+
       for (const tier of standardTiers) {
-        const hasHeight = Array.from(videoHeights).some((h) => h >= tier.height);
-        if (hasHeight) {
-          const matchedFormat = formatMap.get(tier.height) || {};
-          let sizeStr = null;
-          const sz = matchedFormat.filesize || matchedFormat.filesize_approx;
-          if (sz) {
-            sizeStr = formatBytes(sz);
-          } else if (data.duration) {
-            const bitrates = { 2160: 18000, 1440: 9000, 1080: 4500, 720: 2500, 480: 1200, 360: 700 };
-            const estBytes = (bitrates[tier.height] * 1024 * data.duration) / 8;
-            sizeStr = '~' + formatBytes(estBytes);
-          }
-
-          availableVideo.push({
-            quality: tier.quality,
-            label: tier.label,
-            badge: tier.badge,
-            height: tier.height,
-            ext: 'mp4',
-            approxSize: sizeStr
-          });
+        const matchedFormat = formatMap.get(tier.height) || {};
+        let sizeStr = null;
+        const sz = matchedFormat.filesize || matchedFormat.filesize_approx;
+        if (sz) {
+          sizeStr = formatBytes(sz);
+        } else {
+          const bitrates = { 1080: 4500, 720: 2500, 480: 1200, 360: 700 };
+          const estBytes = (bitrates[tier.height] * 1024 * effectiveDuration) / 8;
+          sizeStr = '~' + formatBytes(estBytes);
         }
-      }
 
-      if (availableVideo.length === 0) {
         availableVideo.push({
-          quality: '720p',
-          label: '720p HD / Best',
-          badge: 'BEST',
-          height: 720,
+          quality: tier.quality,
+          label: tier.label,
+          badge: tier.badge,
+          subLabel: tier.subLabel,
+          height: tier.height,
           ext: 'mp4',
-          approxSize: data.duration ? '~' + formatBytes((2500 * 1024 * data.duration) / 8) : null
+          approxSize: sizeStr
         });
       }
 
@@ -198,7 +185,7 @@ app.post('/api/info', async (req, res) => {
           subLabel: '320 kbps (High Fidelity)',
           badge: 'HQ',
           ext: 'mp3',
-          approxSize: data.duration ? '~' + formatBytes((320 * 1024 * data.duration) / 8) : null
+          approxSize: '~' + formatBytes((320 * 1024 * effectiveDuration) / 8)
         },
         {
           quality: 'mp3-128',
@@ -206,7 +193,7 @@ app.post('/api/info', async (req, res) => {
           subLabel: '128 kbps (Optimized)',
           badge: 'STD',
           ext: 'mp3',
-          approxSize: data.duration ? '~' + formatBytes((128 * 1024 * data.duration) / 8) : null
+          approxSize: '~' + formatBytes((128 * 1024 * effectiveDuration) / 8)
         },
         {
           quality: 'm4a',
@@ -214,9 +201,11 @@ app.post('/api/info', async (req, res) => {
           subLabel: 'Native YouTube Audio Stream',
           badge: 'AAC',
           ext: 'm4a',
-          approxSize: data.duration ? '~' + formatBytes((140 * 1024 * data.duration) / 8) : null
+          approxSize: '~' + formatBytes((140 * 1024 * effectiveDuration) / 8)
         }
       ];
+
+      const durationStr = data.duration_string || formatDuration(data.duration) || '0:00';
 
       res.json({
         id: data.id,
@@ -226,7 +215,7 @@ app.post('/api/info', async (req, res) => {
         uploaderUrl: data.uploader_url || data.channel_url || '',
         thumbnail: bestThumbnail,
         duration: data.duration,
-        durationFormatted: formatDuration(data.duration),
+        durationFormatted: durationStr,
         viewCount: data.view_count,
         viewCountFormatted: formatViews(data.view_count),
         videoFormats: availableVideo,
@@ -286,13 +275,12 @@ app.post('/api/download/prepare', (req, res) => {
     '--buffer-size', '64K',
     '--http-chunk-size', '10M',
     '--no-mtime',
-    '--extractor-args', 'youtube:player_client=android,web',
     '-o', outputTemplate
   ];
 
   if (type === 'audio') {
     if (quality === 'm4a') {
-      args.push('-f', 'bestaudio[ext=m4a]/bestaudio');
+      args.push('-f', 'ba[ext=m4a]/ba/b');
     } else {
       const audioQuality = quality === 'mp3-320' ? '0' : '4';
       args.push(
@@ -302,13 +290,13 @@ app.post('/api/download/prepare', (req, res) => {
       );
     }
   } else {
-    // Video
+    // Video: Target EXACT selected resolution (1080p, 720p, 480p, 360p)
     const heightMatch = quality ? quality.match(/(\d+)p/) : null;
-    const maxH = heightMatch ? heightMatch[1] : '1080';
+    const targetH = heightMatch ? heightMatch[1] : '1080';
 
     args.push(
       '-f',
-      `bestvideo[height<=${maxH}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=${maxH}]+bestaudio/best[height<=${maxH}]/best`,
+      `bv*[height=${targetH}]+ba/b[height=${targetH}]/bv*[height<=${targetH}]+ba/b[height<=${targetH}]/best`,
       '--merge-output-format', 'mp4'
     );
   }
@@ -317,6 +305,12 @@ app.post('/api/download/prepare', (req, res) => {
 
   const proc = spawn(YT_DLP_PATH, args);
   job.proc = proc;
+
+  proc.on('error', (err) => {
+    console.error(`[Job ${jobId}] spawn error:`, err);
+    job.status = 'error';
+    job.error = `Engine execution error: ${err.message}`;
+  });
   let streamCount = 0;
   const isMergedVideo = type !== 'audio';
 
