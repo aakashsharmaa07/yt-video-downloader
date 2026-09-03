@@ -17,6 +17,14 @@ const YT_DLP_PATH = path.join(__dirname, 'yt-dlp.exe');
 const FFMPEG_PATH = ffmpegStatic;
 const TEMP_DIR = path.join(__dirname, 'temp_downloads');
 
+function getCookiesFilePath() {
+  const localCookies = path.join(__dirname, 'cookies.txt');
+  if (fs.existsSync(localCookies)) {
+    return localCookies;
+  }
+  return null;
+}
+
 if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
@@ -93,9 +101,15 @@ app.post('/api/info', async (req, res) => {
     '--dump-single-json',
     '--no-playlist',
     '--no-warnings',
-    '--js-runtimes', 'node',
-    cleanUrl
+    '--js-runtimes', 'node'
   ];
+
+  const cookiesPath = getCookiesFilePath();
+  if (cookiesPath) {
+    args.push('--cookies', cookiesPath);
+  }
+
+  args.push(cleanUrl);
 
   let stdoutData = '';
   let stderrData = '';
@@ -143,8 +157,10 @@ app.post('/api/info', async (req, res) => {
         }
       });
 
-      // Standard resolution tiers we offer
+      // Standard resolution tiers we offer (up to 4K Ultra HD)
       const standardTiers = [
+        { height: 2160, label: '4K Ultra HD', quality: '2160p', badge: '4K', subLabel: '4K MP4 Video' },
+        { height: 1440, label: '2K Quad HD', quality: '1440p', badge: '2K', subLabel: '2K MP4 Video' },
         { height: 1080, label: '1080p Full HD', quality: '1080p', badge: 'FHD', subLabel: '1080p MP4 Video' },
         { height: 720, label: '720p HD', quality: '720p', badge: 'HD', subLabel: '720p MP4 Video' },
         { height: 480, label: '480p Standard', quality: '480p', badge: 'SD', subLabel: '480p MP4 Video' },
@@ -155,13 +171,19 @@ app.post('/api/info', async (req, res) => {
       const effectiveDuration = data.duration || 180;
 
       for (const tier of standardTiers) {
+        // For 4K (2160p) and 2K (1440p), check if video was uploaded in that resolution
+        if (tier.height > 1080) {
+          const hasHighRes = Array.from(videoHeights).some((h) => h >= tier.height);
+          if (!hasHighRes) continue;
+        }
+
         const matchedFormat = formatMap.get(tier.height) || {};
         let sizeStr = null;
         const sz = matchedFormat.filesize || matchedFormat.filesize_approx;
         if (sz) {
           sizeStr = formatBytes(sz);
         } else {
-          const bitrates = { 1080: 4500, 720: 2500, 480: 1200, 360: 700 };
+          const bitrates = { 2160: 18000, 1440: 9000, 1080: 4500, 720: 2500, 480: 1200, 360: 700 };
           const estBytes = (bitrates[tier.height] * 1024 * effectiveDuration) / 8;
           sizeStr = '~' + formatBytes(estBytes);
         }
@@ -277,6 +299,11 @@ app.post('/api/download/prepare', (req, res) => {
     '--no-mtime',
     '-o', outputTemplate
   ];
+
+  const cookiesPath = getCookiesFilePath();
+  if (cookiesPath) {
+    args.push('--cookies', cookiesPath);
+  }
 
   if (type === 'audio') {
     if (quality === 'm4a') {
